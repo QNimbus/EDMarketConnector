@@ -177,7 +177,7 @@ class AppWindow:
                         bpc.export(data, False)
 
                 if config.getint('output') & config.OUT_EDDN:
-                    if data['lastStarport'].get('commodities') or data['lastStarport'].get('modules'):
+                    if data['lastStarport'].get('commodities') or data['lastStarport'].get('modules') or data['lastStarport'].get('ships'):
                         eddn.export(data)
                         self.status['text'] = strftime('Last updated at %H:%M:%S', localtime(querytime))
                     else:

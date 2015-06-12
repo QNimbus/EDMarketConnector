@@ -50,6 +50,9 @@ def export(data):
             'modules'     : [int(x) for x in data['lastStarport'].get('modules', [])],
         }
     }
+    # Shipyard data is only guaranteed present if user has visited the shipyard. Otherwise omit the "ships" property.
+    if data['lastStarport'].get('ships'):
+        msg['message']['ships'] = [x['id'] for x in data['lastStarport']['ships'].get('shipyard_list', []) + data['lastStarport']['ships'].get('unavailable_list', [])]
 
     r = requests.post(upload, data=json.dumps(msg))
     if __debug__ and r.status_code != requests.codes.ok:
