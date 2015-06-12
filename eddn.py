@@ -68,7 +68,7 @@ def export(data):
             'systemName'  : data['lastSystem']['name'].strip(),
             'stationName' : data['lastStarport']['name'].strip(),
             'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
-            'modules'     : [int(x) for x in data['lastStarport'].get('modules', [])],
+            'modules'     : [int(k) for k,v in data['lastStarport'].get('modules', {}).iteritems() if v['category'] not in ['decal', 'paintjob']],
         }
     })
 
