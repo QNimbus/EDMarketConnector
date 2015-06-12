@@ -11,7 +11,7 @@ import time
 from config import applongname, appversion, config
 
 upload = 'http://eddn-gateway.elite-markets.net:8080/upload/'
-schema = 'http://schemas.elite-markets.net/eddn/commodity/2'
+schema = 'http://schemas.elite-markets.net/eddn/commodity/3'
 
 bracketmap = { 1: 'Low',
                2: 'Med',
@@ -22,7 +22,7 @@ def export(data):
     querytime = config.getint('querytime') or int(time.time())
 
     commodities = []
-    for commodity in data['lastStarport']['commodities']:
+    for commodity in data['lastStarport'].get('commodities', []):
         commodities.append({
             'name'      : commodity['name'],
             'buyPrice'  : commodity['buyPrice'],
@@ -47,7 +47,8 @@ def export(data):
             'stationName' : data['lastStarport']['name'].strip(),
             'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
             'commodities' : commodities,
-            }
+            'modules'     : [int(x) for x in data['lastStarport'].get('modules', [])],
+        }
     }
 
     r = requests.post(upload, data=json.dumps(msg))

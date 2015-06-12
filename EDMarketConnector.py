@@ -167,18 +167,25 @@ class AppWindow:
                 self.status['text'] = "You're not docked at a station!"
             elif not data.get('lastSystem') or not data['lastSystem'].get('name','').strip() or not data.get('lastStarport') or not data['lastStarport'].get('name','').strip():
                 self.status['text'] = "Where are you?!"	# Shouldn't happen
-            elif not data['lastStarport'].get('commodities'):
-                self.status['text'] = "Station doesn't have a market!"
             else:
-                if config.getint('output') & config.OUT_CSV:
-                    bpc.export(data, True)
-                if config.getint('output') & config.OUT_TD:
-                    td.export(data)
-                if config.getint('output') & config.OUT_BPC:
-                    bpc.export(data, False)
+                if data['lastStarport'].get('commodities'):
+                    if config.getint('output') & config.OUT_CSV:
+                        bpc.export(data, True)
+                    if config.getint('output') & config.OUT_TD:
+                        td.export(data)
+                    if config.getint('output') & config.OUT_BPC:
+                        bpc.export(data, False)
+
                 if config.getint('output') & config.OUT_EDDN:
-                    eddn.export(data)
-                self.status['text'] = strftime('Last updated at %H:%M:%S', localtime(querytime))
+                    if data['lastStarport'].get('commodities') or data['lastStarport'].get('modules'):
+                        eddn.export(data)
+                        self.status['text'] = strftime('Last updated at %H:%M:%S', localtime(querytime))
+                    else:
+                        self.status['text'] = "Station doesn't have anything!"
+                elif not data['lastStarport'].get('commodities'):
+                    self.status['text'] = "Station doesn't have a market!"
+                else:
+                    self.status['text'] = strftime('Last updated at %H:%M:%S', localtime(querytime))
 
         except companion.VerificationRequired:
             return prefs.AuthenticationDialog(self.w, self.verify)
