@@ -11,7 +11,6 @@ import time
 from config import applongname, appversion, config
 
 upload = 'http://eddn-gateway.elite-markets.net:8080/upload/'
-schema = 'http://schemas.elite-markets.net/eddn/commodity/3'
 
 bracketmap = { 1: 'Low',
                2: 'Med',
@@ -19,7 +18,22 @@ bracketmap = { 1: 'Low',
 
 def export(data):
 
+    def send(msg):
+        r = requests.post(upload, data=json.dumps(msg))
+        if __debug__ and r.status_code != requests.codes.ok:
+            print 'Status\t%s'  % r.status_code
+            print 'URL\t%s'  % r.url
+            print 'Headers\t%s' % r.headers
+            print ('Content:\n%s' % r.text).encode('utf-8')
+        r.raise_for_status()
+
     querytime = config.getint('querytime') or int(time.time())
+
+    header = {
+        'uploaderID'      : config.getint('anonymous') and hashlib.md5(data['commander']['name'].strip().encode('utf-8')).hexdigest() or data['commander']['name'].strip(),
+        'softwareName'    : '%s [%s]' % (applongname, platform=='darwin' and "Mac OS" or system()),
+        'softwareVersion' : appversion,
+    }
 
     commodities = []
     for commodity in data['lastStarport'].get('commodities', []):
@@ -35,29 +49,38 @@ def export(data):
         if commodity['demandBracket']:
             commodities[-1]['demandLevel'] = bracketmap[commodity['demandBracket']]
 
-    msg = {
-        '$schemaRef' : schema,
-        'header'     : {
-            'uploaderID'      : config.getint('anonymous') and hashlib.md5(data['commander']['name'].strip().encode('utf-8')).hexdigest() or data['commander']['name'].strip(),
-            'softwareName'    : '%s [%s]' % (applongname, platform=='darwin' and "Mac OS" or system()),
-            'softwareVersion' : appversion,
-        },
+    if data['lastStarport']['commodities']:
+        send({
+            '$schemaRef' : 'http://schemas.elite-markets.net/eddn/commodity/2',
+            'header'     : header,
+            'message'    : {
+                'systemName'  : data['lastSystem']['name'].strip(),
+                'stationName' : data['lastStarport']['name'].strip(),
+                'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
+                'commodities' : commodities,
+            }
+        })
+
+    send({
+        '$schemaRef' : 'http://schemas.elite-markets.net/eddn/outfitting/1',
+        'header'     : header,
         'message'    : {
             'systemName'  : data['lastSystem']['name'].strip(),
             'stationName' : data['lastStarport']['name'].strip(),
             'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
-            'commodities' : commodities,
             'modules'     : [int(x) for x in data['lastStarport'].get('modules', [])],
         }
-    }
+    })
+
     # Shipyard data is only guaranteed present if user has visited the shipyard. Otherwise omit the "ships" property.
     if data['lastStarport'].get('ships'):
-        msg['message']['ships'] = [x['id'] for x in data['lastStarport']['ships'].get('shipyard_list', []) + data['lastStarport']['ships'].get('unavailable_list', [])]
-
-    r = requests.post(upload, data=json.dumps(msg))
-    if __debug__ and r.status_code != requests.codes.ok:
-        print 'Status\t%s'  % r.status_code
-        print 'URL\t%s'  % r.url
-        print 'Headers\t%s' % r.headers
-        print ('Content:\n%s' % r.text).encode('utf-8')
-    r.raise_for_status()
+        send({
+            '$schemaRef' : 'http://schemas.elite-markets.net/eddn/shipyard/1',
+            'header'     : header,
+            'message'    : {
+                'systemName'  : data['lastSystem']['name'].strip(),
+                'stationName' : data['lastStarport']['name'].strip(),
+                'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
+                'ships'       : [{ 'name': x['name']} for x in data['lastStarport']['ships'].get('shipyard_list', {}).values() + data['lastStarport']['ships'].get('unavailable_list', [])],
+                }
+            })

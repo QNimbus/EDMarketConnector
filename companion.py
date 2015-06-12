@@ -39,6 +39,31 @@ commoditymap= { 'Agricultural Medicines': 'Agri-Medicines',
                 'S A P8 Core Container': 'SAP 8 Core Container',
                 'Terrain Enrichment Systems': 'Land Enrichment Systems', }
 
+shipmap = {
+    'Adder'               : 'Adder',
+    'Anaconda'            : 'Anaconda',
+    'Asp'                 : 'Asp',
+    'CobraMkIII'          : 'Cobra Mk III',
+    'DiamondBack'         : 'Diamondback Scout',
+    'DiamondBackXL'       : 'Diamondback Explorer',
+    'Eagle'               : 'Eagle',
+    'Empire_Courier'      : 'Imperial Courier',
+    'Empire_Fighter'      : 'Imperial Fighter',
+    'Empire_Trader'       : 'Imperial Clipper',
+    'Federation_Dropship' : 'Dropship',
+    'Federation_Fighter'  : 'F63 Condor',
+    'FerDeLance'          : 'Fer-de-Lance',
+    'Hauler'              : 'Hauler',
+    'Orca'                : 'Orca',
+    'Python'              : 'Python',
+    'SideWinder'          : 'Sidewinder',
+    'Type6'               : 'Type-6 Transporter',
+    'Type7'               : 'Type-7 Transporter',
+    'Type9'               : 'Type-9 Heavy',
+    'Viper'               : 'Viper',
+    'Vulture'             : 'Vulture',
+}
+
 
 class ServerError(Exception):
     def __str__(self):
@@ -150,7 +175,7 @@ class Session:
         self.session = None
 
 
-    # Fixup anomalies in the recieved commodity data
+    # Fixup anomalies in the recieved data
     def fixup(self, data):
         commodities = data.get('lastStarport') and data['lastStarport'].get('commodities') or []
         i=0
@@ -194,6 +219,11 @@ class Session:
 
             # Skip the commodity
             commodities.pop(i)
+
+        if data['lastStarport'].get('ships'):
+            for ship in data['lastStarport']['ships'].get('shipyard_list', {}).values() + data['lastStarport']['ships'].get('unavailable_list', []):
+                if shipmap.get(ship['name']):
+                    ship['name'] = shipmap[ship['name']]
 
         return data
 
