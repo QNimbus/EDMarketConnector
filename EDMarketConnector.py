@@ -140,13 +140,14 @@ class AppWindow:
         else:
             return self.getandsend()	# try again
 
-    def getandsend(self, event=None):
-        if time() < self.holdofftime: return	# Was invoked by Return key while in cooldown
+    def getandsend(self, event=None, retrying=False):
 
-        self.cmdr['text'] = self.system['text'] = self.station['text'] = ''
-        self.status['text'] = 'Fetching market data...'
-        self.button['state'] = tk.DISABLED
-        self.w.update_idletasks()
+        if not retrying:
+            if time() < self.holdofftime: return	# Was invoked by Return key while in cooldown
+            self.cmdr['text'] = self.system['text'] = self.station['text'] = ''
+            self.status['text'] = 'Fetching market data...'
+            self.button['state'] = tk.DISABLED
+            self.w.update_idletasks()
 
         try:
             querytime = int(time())
@@ -167,6 +168,10 @@ class AppWindow:
                 self.status['text'] = "You're not docked at a station!"
             elif not data.get('lastSystem') or not data['lastSystem'].get('name','').strip() or not data.get('lastStarport') or not data['lastStarport'].get('name','').strip():
                 self.status['text'] = "Where are you?!"	# Shouldn't happen
+            elif (config.getint('output') & config.OUT_EDDN) and not data['lastStarport'].get('ships') and not retrying:
+                # API is flakey about shipyard info - retry if missing
+                self.w.after(2000, lambda:self.getandsend(retrying=True))
+                return
             else:
                 if data['lastStarport'].get('commodities'):
                     if config.getint('output') & config.OUT_CSV:
