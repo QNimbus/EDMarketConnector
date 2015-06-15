@@ -81,6 +81,6 @@ def export(data):
                 'systemName'  : data['lastSystem']['name'].strip(),
                 'stationName' : data['lastStarport']['name'].strip(),
                 'timestamp'   : time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(querytime)),
-                'ships'       : [{ 'name': x['name']} for x in data['lastStarport']['ships'].get('shipyard_list', {}).values() + data['lastStarport']['ships'].get('unavailable_list', [])],
+                'ships'       : [ship['name'] for ship in data['lastStarport']['ships'].get('shipyard_list', {}).values() + data['lastStarport']['ships'].get('unavailable_list', [])],
                 }
             })

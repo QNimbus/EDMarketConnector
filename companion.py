@@ -50,7 +50,7 @@ shipmap = {
     'Empire_Courier'      : 'Imperial Courier',
     'Empire_Fighter'      : 'Imperial Fighter',
     'Empire_Trader'       : 'Imperial Clipper',
-    'Federation_Dropship' : 'Dropship',
+    'Federation_Dropship' : 'Federal Dropship',
     'Federation_Fighter'  : 'F63 Condor',
     'FerDeLance'          : 'Fer-de-Lance',
     'Hauler'              : 'Hauler',
